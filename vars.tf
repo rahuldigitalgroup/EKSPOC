@@ -9,7 +9,7 @@ variable "cluster_version" {
   default     = "1.28"
   description = "Version of the cluster"
 }
-variable "instance_type" {
+variable "instance_kind" {
   type        = string
   default     = ""
   description = "Instance type in node pool"
@@ -24,4 +24,10 @@ variable "vpc_id" {
   default     = ""
   description = "description"
 }
+variable "instance_type" {
+  type        = string
+  default     = ""
+  description = "description"
+}
+
 
