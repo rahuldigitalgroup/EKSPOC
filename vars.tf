@@ -29,5 +29,16 @@ variable "instance_type" {
   default     = ""
   description = "description"
 }
+variable region {
+  type        = string
+  default     = ""
+  description = "description"
+}
+variable domain {
+  type        = string
+  default     = ""
+  description = "description"
+}
+
 
 
