@@ -1,81 +1,40 @@
-module "eks" {
-  source  = "terraform-aws-modules/eks/aws"
-  version = "20.35.0"
-
-  cluster_name                             = var.cluster_name
-  cluster_version                          = var.cluster_version
-  cluster_endpoint_public_access           = false
-  enable_cluster_creator_admin_permissions = true
-
-  cluster_compute_config = {
-    enabled    = true
-    node_pools = [var.instance_kind]
+terraform {
+  required_version = ">= 1.3.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
   }
-  vpc_id     = var.vpc_id
+}
+
+provider "aws" {
+  region = var.aws_region
+}
+
+module "networking" {
+  source    = "./modules/networking"
+  vpc_id    = var.vpc_id
   subnet_ids = var.subnet_ids
-
-  # Flexibility to choose add-ons
-  bootstrap_self_managed_addons = false
-  cluster_addons = {
-    coredns                = {}
-    eks-pod-identity-agent = {}
-    kube-proxy             = {}
-    vpc-cni                = {}
-  }
-
-
-  eks_managed_node_groups = {
-    example = {
-      # Starting on 1.30, AL2023 is the default AMI type for EKS managed node groups
-      ami_type       = "AL2023_x86_64_STANDARD"
-      instance_types = [var.instance_type]
-
-      min_size     = 1
-      max_size     = 2
-      desired_size = 1
-    }
-  }
-
-  access_entries = {
-    # One access entry with a policy associated
-    example = {
-      principal_arn = "arn:aws:iam::851725327429:user/eksdemorole"
-
-      policy_associations = {
-        example = {
-          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSViewPolicy"
-          access_scope = {
-            namespaces = ["default"]
-            type       = "namespace"
-          }
-        }
-      }
-    }
-  }
-resource "aws_iam_role" "eks_node_group_role" {
-  name = "eks-node-group-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [{
-      Effect = "Allow",
-      Principal = {
-        Service = "ec2.amazonaws.com"
-      },
-      Action = "sts:AssumeRole"
-    }]
-  })
 }
 
-resource "aws_iam_role_policy_attachment" "eks_node_group_policy" {
-  role       = aws_iam_role.eks_node_group_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+module "eks" {
+  source            = "./modules/eks"
+  cluster_name      = var.cluster_name
+  cluster_version   = var.cluster_version
+  vpc_id            = module.networking.vpc_id
+  subnet_ids        = module.networking.subnet_ids
+  instance_type     = var.instance_type
 }
 
-
-  tags = {
-    Environment = "dev"
-    Terraform   = "true"
-    Application = var.cluster_name
-  }
+module "iam" {
+  source = "./modules/iam"
 }
 
+module "monitoring" {
+  source = "./modules/monitoring"
+}
+
+module "ingress" {
+  source = "./modules/ingress"
+}

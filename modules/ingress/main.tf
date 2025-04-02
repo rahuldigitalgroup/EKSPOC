@@ -8,30 +8,21 @@ resource "kubernetes_deployment" "nginx_ingress" {
     replicas = 2
 
     selector {
-      match_labels = {
-        app = "nginx-ingress"
-      }
+      match_labels = { app = "nginx-ingress" }
     }
 
     template {
       metadata {
-        labels = {
-          app = "nginx-ingress"
-        }
+        labels = { app = "nginx-ingress" }
       }
 
       spec {
         container {
           name  = "nginx-ingress-controller"
-          image = "quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.30.0"
+          image = "registry.k8s.io/ingress-nginx/controller:v1.8.0"
 
-          ports {
-            container_port = 80
-          }
-
-          ports {
-            container_port = 443
-          }
+          ports { container_port = 80 }
+          ports { container_port = 443 }
         }
       }
     }
